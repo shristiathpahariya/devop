@@ -19,15 +19,15 @@ pipeline {
         stage('Install Build Dependencies') {
             steps {
                 sh '''
-                    apk update && \
-                    apk add --no-cache \
-                        build-base \
+                    apt-get update && \
+                    apt-get install -y \
+                        build-essential \
                         gcc \
                         g++ \
                         python3-dev \
                         cmake \
-                        musl-dev \
-                        openblas-dev
+                        libopenblas-dev \
+                        pkg-config
                 '''
             }
         }
