@@ -1,5 +1,18 @@
 pipeline {
-    agent any
+    agent any{
+        docker {
+            image 'python:3.9-slim'
+            args '-v /tmp:/tmp'  // Optional volume mounts
+        }
+    }
+
+    stages {
+        stage('Install Dependencies') {
+            steps {
+                sh 'python -m pip install --upgrade pip'
+                sh 'pip install -r requirements.txt'
+            }
+        }
 
     // Environment variables
     environment {
