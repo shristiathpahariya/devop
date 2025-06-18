@@ -1,75 +1,96 @@
 pipeline {
     agent any
-    
+
+    // Environment variables
     environment {
-        DOCKER_HUB_CREDENTIALS = credentials('docker-hub-credentials')
-        MODEL_VERSION = "${env.BUILD_ID}"
+        // Repository configuration
+        REPO_URL = 'https://github.com/shristiathpahariya/devops.git'
+        BRANCH = 'main'
+        
+        // Docker configuration (if applicable)
+        DOCKER_IMAGE = 'your-dockerhub/your-repo'
+        DOCKER_TAG = "${env.BUILD_NUMBER}"
     }
-    
+
     stages {
+        // Stage 1: Checkout with GitHub PAT
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/your-repo/sentiment-analysis.git'
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: "${BRANCH}"]],
+                    extensions: [
+                        [$class: 'CleanBeforeCheckout'],
+                        [$class: 'CloneOption', depth: 1, timeout: 10]
+                    ],
+                    userRemoteConfigs: [[
+                        url: "${REPO_URL}",
+                        credentialsId: 'github-pat' // Your PAT credentials ID
+                    ]]
+                ])
             }
         }
-        
+
+        // Stage 2: Install dependencies
+        stage('Setup') {
+            steps {
+                sh '''
+                    python -m pip install --upgrade pip
+                    pip install -r requirements.txt
+                '''
+            }
+        }
+
+        // Stage 3: Run tests
         stage('Test') {
             steps {
-                sh 'python -m pytest tests/'
+                sh 'pytest tests/ --cov=src --cov-report=xml'
+            }
+            post {
+                always {
+                    junit '**/test-results/*.xml'  // Test reports
+                    cobertura coberturaReportFile: '**/coverage.xml'  // Coverage reports
+                }
             }
         }
-        
-        stage('Retrain Model') {
+
+        // Stage 4: Build Docker image (optional)
+        stage('Build Docker Image') {
             when {
                 expression { 
-                    // Run retraining weekly or when data changes
-                    currentBuild.getBuildCauses()[0].toString().contains('TimerTrigger') || 
-                    params.FORCE_RETRAIN == true 
+                    fileExists('Dockerfile') 
                 }
             }
-            steps {
-                sh 'python src/model_training.py'
-                stash includes: 'models/**', name: 'models'
-            }
-        }
-        
-        stage('Build Docker Image') {
             steps {
                 script {
-                    dockerImage = docker.build("your-dockerhub/sentiment-analysis:${env.MODEL_VERSION}")
+                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
                 }
             }
         }
-        
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-                        dockerImage.push()
-                        dockerImage.push('latest')
-                    }
-                }
-            }
-        }
-        
+
+        // Stage 5: Deploy (example)
         stage('Deploy') {
+            when {
+                branch 'main'
+            }
             steps {
-                sshagent(['deployment-key']) {
-                    sh """
-                    ssh user@production-server "docker pull your-dockerhub/sentiment-analysis:${env.MODEL_VERSION}"
-                    ssh user@production-server "docker-compose -f /path/to/docker-compose.yml up -d"
-                    """
-                }
+                echo "Deploying to production..."
+                // Add your deployment steps here
             }
         }
     }
-    
+
     post {
         always {
-            cleanWs()
+            cleanWs()  // Clean workspace
+        }
+        success {
+            slackSend channel: '#builds', 
+                     message: "SUCCESS: Job ${env.JOB_NAME} #${env.BUILD_NUMBER}"
         }
         failure {
-            slackSend channel: '#alerts', message: "Build ${currentBuild.result}: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+            slackSend channel: '#alerts', 
+                     message: "FAILED: Job ${env.JOB_NAME} #${env.BUILD_NUMBER}"
         }
     }
 }
