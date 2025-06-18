@@ -1,7 +1,7 @@
 pipeline {
     agent {
         docker {
-            image 'shedocks/jenkins-python-agent:with-build-tools'
+            image 'shedocks/jenkins-python-agent'
             registryCredentialsId 'shristi'
             args '-u root --platform linux/amd64'
         }
