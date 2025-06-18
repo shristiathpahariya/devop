@@ -38,15 +38,16 @@ pipeline {
         }
 
         stage('Setup') {
-            steps {
-                sh """
-                    python -m venv ${VENV_PATH}
-                    . ${VENV_PATH}/bin/activate
-                    pip install --upgrade pip setuptools wheel
-                    pip install -r requirements.txt
-                """
-            }
-        }
+       steps {
+        sh """
+            apk update && apk add build-base python3-dev
+            python -m venv ${VENV_PATH}
+            . ${VENV_PATH}/bin/activate
+            pip install --upgrade pip
+            pip install --prefer-binary -r requirements.txt
+        """
+          }
+      }
 
         stage('Test') {
             steps {
