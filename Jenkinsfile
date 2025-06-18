@@ -19,14 +19,15 @@ pipeline {
         stage('Install Build Dependencies') {
             steps {
                 sh '''
-                    apk-get update && \
-                    apk-get install -y \
-                        build-essential \
+                    apk update && \
+                    apk add --no-cache \
+                        build-base \
                         gcc \
                         g++ \
                         python3-dev \
                         cmake \
-                        pkg-config
+                        musl-dev \
+                        openblas-dev
                 '''
             }
         }
@@ -38,16 +39,15 @@ pipeline {
         }
 
         stage('Setup') {
-       steps {
-        sh """
-            apk update && apk add build-base python3-dev
-            python -m venv ${VENV_PATH}
-            . ${VENV_PATH}/bin/activate
-            pip install --upgrade pip
-            pip install --prefer-binary -r requirements.txt
-        """
-          }
-      }
+            steps {
+                sh """
+                    python -m venv ${VENV_PATH}
+                    . ${VENV_PATH}/bin/activate
+                    pip install --upgrade pip setuptools wheel
+                    pip install --no-cache-dir -r requirements.txt
+                """
+            }
+        }
 
         stage('Test') {
             steps {
