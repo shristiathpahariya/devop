@@ -1,18 +1,10 @@
 pipeline {
     agent {
         docker {
-            image 'python:3.9-slim'
-            args '-v /tmp:/tmp'  // Optional volume mounts
+            image 'shedocks/jenkins-python-agent'  // Your pre-built image
+            registryCredentialsId 'shristi'        // Jenkins credential ID for registry
         }
     }
-
-    stages {
-        stage('Install Dependencies') {
-            steps {
-                sh 'python -m pip install --upgrade pip'
-                sh 'pip install -r requirements.txt'
-            }
-        }
 
     // Environment variables
     environment {
