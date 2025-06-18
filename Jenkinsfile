@@ -3,7 +3,7 @@ pipeline {
         docker {
             image 'shedocks/jenkins-python-agent'
             registryCredentialsId 'shristi'
-            args '-u root --platform linux/amd64' 
+            args '-u root --platform linux/amd64'
         }
     }
 
@@ -16,9 +16,24 @@ pipeline {
     }
 
     stages {
+        stage('Install Build Dependencies') {
+            steps {
+                sh '''
+                    apt-get update && \
+                    apt-get install -y \
+                        build-essential \
+                        gcc \
+                        g++ \
+                        python3-dev \
+                        cmake \
+                        pkg-config
+                '''
+            }
+        }
+
         stage('Checkout') {
             steps {
-                checkout scm  // Simplified checkout
+                checkout scm
             }
         }
 
@@ -27,7 +42,7 @@ pipeline {
                 sh """
                     python -m venv ${VENV_PATH}
                     . ${VENV_PATH}/bin/activate
-                    pip install --upgrade pip
+                    pip install --upgrade pip setuptools wheel
                     pip install -r requirements.txt
                 """
             }
