@@ -1,5 +1,5 @@
 pipeline {
-    agent any{
+    agent {
         docker {
             image 'python:3.9-slim'
             args '-v /tmp:/tmp'  // Optional volume mounts
