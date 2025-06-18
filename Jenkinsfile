@@ -25,7 +25,7 @@ pipeline {
                     ],
                     userRemoteConfigs: [[
                         url: "${REPO_URL}",
-                        credentialsId: 'github-pat' // Your PAT credentials ID
+                        credentialsId: 'github-creds'
                     ]]
                 ])
             }
