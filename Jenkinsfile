@@ -3,7 +3,7 @@ pipeline {
         docker {
             image 'shedocks/jenkins-python-agent'
             registryCredentialsId 'shristi'
-            args '-u root'  // Fix for permission issues
+            args '-u root --platform linux/amd64'
         }
     }
 
