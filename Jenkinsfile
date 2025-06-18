@@ -1,70 +1,56 @@
 pipeline {
     agent {
         docker {
-            image 'shedocks/jenkins-python-agent'  // Your pre-built image
-            registryCredentialsId 'shristi'        // Jenkins credential ID for registry
+            image 'shedocks/jenkins-python-agent'
+            registryCredentialsId 'shristi'
+            args '-u root'  // Fix for permission issues
         }
     }
 
-    // Environment variables
     environment {
-        // Repository configuration
         REPO_URL = 'https://github.com/shristiathpahariya/devop.git'
         BRANCH = 'main'
-        
-        // Docker configuration (if applicable)
         DOCKER_IMAGE = 'your-dockerhub/your-repo'
         DOCKER_TAG = "${env.BUILD_NUMBER}"
+        VENV_PATH = "${WORKSPACE}/venv"
     }
 
     stages {
-        // Stage 1: Checkout with GitHub PAT
         stage('Checkout') {
             steps {
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: "${BRANCH}"]],
-                    extensions: [
-                        [$class: 'CleanBeforeCheckout'],
-                        [$class: 'CloneOption', depth: 1, timeout: 10]
-                    ],
-                    userRemoteConfigs: [[
-                        url: "${REPO_URL}",
-                        credentialsId: 'github-creds'
-                    ]]
-                ])
+                checkout scm  // Simplified checkout
             }
         }
 
-        // Stage 2: Install dependencies
         stage('Setup') {
             steps {
-                sh '''
-                    python -m pip install --upgrade pip
+                sh """
+                    python -m venv ${VENV_PATH}
+                    . ${VENV_PATH}/bin/activate
+                    pip install --upgrade pip
                     pip install -r requirements.txt
-                '''
+                """
             }
         }
 
-        // Stage 3: Run tests
         stage('Test') {
             steps {
-                sh 'pytest tests/ --cov=src --cov-report=xml'
+                sh """
+                    . ${VENV_PATH}/bin/activate
+                    pytest tests/ --cov=src --cov-report=xml
+                """
             }
             post {
                 always {
-                    junit '**/test-results/*.xml'  // Test reports
-                    cobertura coberturaReportFile: '**/coverage.xml'  // Coverage reports
+                    junit '**/test-results/*.xml'
+                    cobertura '**/coverage.xml'
                 }
             }
         }
 
-        // Stage 4: Build Docker image (optional)
         stage('Build Docker Image') {
             when {
-                expression { 
-                    fileExists('Dockerfile') 
-                }
+                expression { fileExists('Dockerfile') }
             }
             steps {
                 script {
@@ -72,30 +58,11 @@ pipeline {
                 }
             }
         }
-
-        // Stage 5: Deploy (example)
-        stage('Deploy') {
-            when {
-                branch 'main'
-            }
-            steps {
-                echo "Deploying to production..."
-                // Add your deployment steps here
-            }
-        }
     }
 
     post {
         always {
-            cleanWs()  // Clean workspace
-        }
-        success {
-            slackSend channel: '#builds', 
-                     message: "SUCCESS: Job ${env.JOB_NAME} #${env.BUILD_NUMBER}"
-        }
-        failure {
-            slackSend channel: '#alerts', 
-                     message: "FAILED: Job ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+            cleanWs()
         }
     }
 }
