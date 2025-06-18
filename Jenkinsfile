@@ -4,7 +4,7 @@ pipeline {
     // Environment variables
     environment {
         // Repository configuration
-        REPO_URL = 'https://github.com/shristiathpahariya/devops.git'
+        REPO_URL = 'https://github.com/shristiathpahariya/devop.git'
         BRANCH = 'main'
         
         // Docker configuration (if applicable)
