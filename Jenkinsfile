@@ -53,14 +53,14 @@ pipeline {
             steps {
                 sh """
                     . ${VENV_PATH}/bin/activate
-                    export PYTHONPATH=$PYTHONPATH:$WORKSPACE/src
+                    export PYTHONPATH=$WORKSPACE/src
                     pytest tests/ --cov=src --cov-report=xml
                 """
             }
             post {
                 always {
-                    junit '**/test-results/*.xml'
-                    cobertura '**/coverage.xml'
+                    junit 'report.xml'
+                    cobertura 'coverage.xml'
                 }
             }
         }
