@@ -53,7 +53,7 @@ pipeline {
             steps {
                 sh """
                     . ${VENV_PATH}/bin/activate
-                    export PYTHONPATH=$WORKSPACE/src
+                    export PYTHONPATH=\$PYTHONPATH:\$WORKSPACE/src
                     pytest tests/ --cov=src --cov-report=xml
                 """
             }
