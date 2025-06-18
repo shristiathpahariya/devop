@@ -3,7 +3,7 @@ pipeline {
         docker {
             image 'shedocks/jenkins-python-agent'
             registryCredentialsId 'shristi'
-            args '-u root --platform linux/amd64'  # Force AMD64 architecture
+            args '-u root --platform linux/amd64'  
         }
     }
 
